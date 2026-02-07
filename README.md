@@ -69,4 +69,4 @@ This repository contains deliverables for **Hevo Assessment I**, demonstrating a
 - `sql/validation.sql` — Verification queries.
 
 ## Loom Video
-https://www.loom.com/share/your-video-link
+
