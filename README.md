@@ -30,12 +30,40 @@ wal_level = logical
 max_replication_slots = 4
 max_wal_senders = 4
 ```
+- Restart the container:
+
+```bash
+docker restart hevo-postgres
+```
+#### Grant Permissions to the Database User
+Run the following SQL commands to give replication and access privileges:
+
+```sql
+-- Enable replication for the user
+ALTER ROLE your_user WITH REPLICATION;
+
+-- Grant connection to the database
+GRANT CONNECT ON DATABASE hevo_db TO hevo_user;
+
+-- Grant usage on the schema
+GRANT USAGE ON SCHEMA public TO hevo_user;
+
+-- Grant select on existing tables
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO hevo_user;
+
+-- Grant select on tables created in the future
+ALTER DEFAULT PRIVILEGES IN SCHEMA public
+GRANT SELECT ON TABLES TO hevo_user;
+```
+
+> **Note:** Replace the placeholders with your own values, e.g., `<database_username>` → `hevouser`, `<database_name>` → `hevodb`, `<schema_name>` → `public`.
 
 - Exposed the local DB to Hevo using ngrok:
 
 ```bash
 ./ngrok tcp 5432
 ```
+
 
 ### 4. Table Creation & Data Load
 - Created tables `customers`, `orders`, and `feedback` in PostgreSQL (see `sql/postgres_schema.sql`).  
