@@ -1,72 +1,110 @@
-# Hevo Data Assessment I
+# Hevo Assessment I
 
 ## Overview
-This repository contains deliverables for **Hevo Assessment I**, demonstrating a data pipeline from PostgreSQL to Snowflake with basic transformations using Hevo Data.
+This repository contains the deliverables for **Hevo Assessment I**, demonstrating a data pipeline from PostgreSQL to Snowflake, including data transformations for orders and customers.
+
+---
 
 ## Steps to Reproduce
 
-1. **Snowflake Setup**
-   - Created a free trial account on Snowflake (AWS region).
-   - Set up a database/schema for this assessment.
+### 1. Snowflake Signup
+- Created a free trial account at [snowflake.com](https://www.snowflake.com) on AWS US East.
 
-2. **Hevo Setup**
-   - Activated free Hevo trial via Snowflake Partner Connect.
-   - Logged in and created a new pipeline.
+### 2. Hevo Signup
+- Activated a Hevo trial via Snowflake Partner Connect.
 
-3. **PostgreSQL Setup**
-   - Installed PostgreSQL locally (Docker):
-     ```bash
-     docker run -d --name hevo-postgres -p 5432:5432 -e POSTGRES_PASSWORD=your_password postgres
-     ```
-   - Exposed local database to Hevo using `ngrok`:
-     ```bash
-     ./ngrok tcp 5432
-     ```
+### 3. PostgreSQL Setup
+- Installed PostgreSQL using Docker:
 
-4. **Schema & Data Load**
-   - Created tables `customers`, `orders`, and `feedback` using provided DDL files.
-   - Loaded CSV data with `\copy` commands.
+```bash
+docker run -d --name postgres-hevo \
+  -p 5432:5432 \
+  -e POSTGRES_PASSWORD=your_password \
+  postgres:latest
+```
 
-5. **Hevo Pipeline**
-   - Set PostgreSQL as source (Logical Replication).
-   - Snowflake as destination.
-   - Pipeline executed and data loaded.
+- Configured **logical replication** by setting the following in `postgresql.conf`:
 
-6. **Transformations**
-   - Created Hevo Model for `order_events` mapping statuses to event types.
-   - Added derived `username` to `customers` extracted from `email`.
+```bash
+wal_level = logical
+max_replication_slots = 4
+max_wal_senders = 4
+```
 
-7. **Verification**
-   - Validated transformed tables in Snowflake using SQL queries.
+- Exposed the local DB to Hevo using ngrok:
+
+```bash
+./ngrok tcp 5432
+```
+
+### 4. Table Creation & Data Load
+- Created tables `customers`, `orders`, and `feedback` in PostgreSQL (see `sql/postgres_schema.sql`).  
+- Copy CSV files to the Docker container:
+
+```bash
+docker cp ~/path/customers.csv hevo-postgres:/customers.csv
+```
+
+- Load data from CSVs using `\copy`:
+
+```sql
+\copy customers(id, first_name, last_name, email, address) 
+FROM '/customers.csv' DELIMITER ',' CSV HEADER;
+```
+
+### 5. Hevo Pipeline
+- Set up pipeline:  
+  - **Source:** PostgreSQL  
+  - **Destination:** Snowflake  
+  - **Mode:** Logical Replication  
+- **Pipeline ID:** 1
+
+### 6. Transformations
+- **Hevo Model 5:** Generated `order_events` table from `orders` status.  
+- **Hevo Model 6:** Added `username` column to the existing `customers` table.
+
+### 7. Verification
+- Validated transformed data in Snowflake (see `sql/validation.sql`).
+
+---
 
 ## Assumptions
-- `status` column in `orders` was implemented as `varchar`.
-- All emails contain an “@” for username extraction.
-- Dates and enums were handled with fallback defaults.
+- `status` in `orders` is a VARCHAR with values: `'placed'`, `'shipped'`, `'delivered'`, `'cancelled'`.  
+- Emails in `customers` are valid (contain '@') for `username` derivation.
 
-## How Postgres Was Connected to Hevo
-- Used ngrok to expose the local Postgres instance on a public host.
-- Configured Hevo source with host, port, user, and password securely.
+---
 
-## Transformations & Choices
-- Created `order_events` model in Hevo using SQL SELECT logic.
-- Derived `username` from `email` via `SPLIT_PART`.
-- Used Snowflake `COALESCE` and string operations for cleaning.
+## PostgreSQL → Hevo Connection
+- Exposed local PostgreSQL instance (port 5432) via ngrok.  
+- Configured Hevo pipeline with ngrok host and port, and PostgreSQL credentials (stored securely outside the repo).
 
-## Issues & Workarounds
-- Ngrok dynamic URLs required updating source configuration.
-- Initially set Primary Key caused dropped duplicates — removed PK and reloaded.
+---
+
+## Choices Made for Transformations
+- Added `username` to the existing `customers` table instead of creating a new table (Hevo Model 6).  
+- Created `order_events` as a separate table to map `status` to `event_type` for event-based analytics.
+
+---
+
+## Issues / Workarounds
+- **Ngrok URL Changes:** Free ngrok tier regenerates URLs; manually updated Hevo pipeline source configuration when URL changed.
+
+---
 
 ## Hevo Details
-- Hevo Account Name: *YOUR NAME*
-- Pipeline ID: *PIPELINE ID*
-- Models: 5 & 6
+- **Name:** varsha2808  
+- **Pipeline ID:** 1  
+- **Model Numbers:** 5 & 6
 
-## Files Included
-- `sql/postgres_schema.sql` — Postgres DDL files.
-- `data/` — CSV sample data or links.
-- `sql/transformations.sql` — Hevo Model SQL scripts.
-- `sql/validation.sql` — Verification queries.
+---
 
 ## Loom Video
+https://www.loom.com/share/5e43f39f88d24d10bac62d162843d49f
 
+---
+
+## Files
+- `sql/postgres_schema.sql` — PostgreSQL DDL for table creation.  
+- `sql/transformations.sql` — Hevo Model transformation scripts.  
+- `sql/validation.sql` — Snowflake validation queries.  
+- `csv_datasets/customers.csv`, `csv_datasets/orders.csv`, `csv_datasets/feedback.csv`, — Sample CSV data.
