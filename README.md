@@ -8,7 +8,7 @@ This repository contains the deliverables for **Hevo Assessment I**, demonstrati
 ## Steps to Reproduce
 
 ### 1. Snowflake Signup
-- Created a free trial account at [snowflake.com](https://www.snowflake.com) on AWS US East.
+- Created a free trial account at [snowflake.com](https://www.snowflake.com) on AWS Asia Singapore.
 
 ### 2. Hevo Signup
 - Activated a Hevo trial via Snowflake Partner Connect.
